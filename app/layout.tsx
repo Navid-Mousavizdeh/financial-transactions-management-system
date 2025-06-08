@@ -1,20 +1,19 @@
 "use client";
 
+import { Roboto } from "next/font/google";
 import { store } from "@/store";
-import { AntdRegistry } from "@ant-design/nextjs-registry";
-import "@ant-design/v5-patch-for-react-19";
-import { Geist, Geist_Mono } from "next/font/google";
 import { Provider } from "react-redux";
+import { AntdRegistry } from "@ant-design/nextjs-registry";
+
+import "@ant-design/v5-patch-for-react-19";
 import "./globals.css";
+import ThemeProvider from "@/providers/ThemeProvider";
+import { App } from "antd";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const roboto = Roboto({
   subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
+  variable: "--font-roboto",
+  weight: ["400", "500", "700"], // optional
 });
 
 export default function RootLayout({
@@ -24,10 +23,14 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable}`}>
-        <Provider store={store}>
-          <AntdRegistry>{children}</AntdRegistry>
-        </Provider>
+      <body className={`${roboto.variable}`}>
+        <AntdRegistry>
+          <Provider store={store}>
+            <ThemeProvider>
+              <App>{children}</App>
+            </ThemeProvider>
+          </Provider>
+        </AntdRegistry>
       </body>
     </html>
   );
