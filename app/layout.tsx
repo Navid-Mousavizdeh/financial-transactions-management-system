@@ -9,6 +9,7 @@ import "@ant-design/v5-patch-for-react-19";
 import "./globals.css";
 import ThemeProvider from "@/providers/ThemeProvider";
 import { App } from "antd";
+import { DashboardLayout } from "@/components/layouts";
 
 const roboto = Roboto({
   subsets: ["latin"],
@@ -27,7 +28,9 @@ export default function RootLayout({
         <AntdRegistry>
           <Provider store={store}>
             <ThemeProvider>
-              <App>{children}</App>
+              <App>
+                <DashboardLayout>{children}</DashboardLayout>
+              </App>
             </ThemeProvider>
           </Provider>
         </AntdRegistry>
