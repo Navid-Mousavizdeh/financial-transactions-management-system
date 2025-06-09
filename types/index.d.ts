@@ -31,3 +31,14 @@ type Transaction = {
     customer_id: string;
   };
 };
+
+type GetQuery = {
+  sort: { field: string; order: "asc" | "desc" }[];
+  filter: {
+    field: string;
+    value: string | number | string[] | { min?: number; max?: number };
+  }[];
+  search?: string;
+  page: number;
+  size: number;
+};

@@ -1,48 +1,190 @@
-import { NextRequest, NextResponse } from "next/server";
 import { config as jsonServerConfig } from "@/json-server/config";
-
-async function proxyRequest(req: NextRequest) {
-  const url = new URL(req.url);
-  url.pathname = url.pathname.replace(/^\/api\//, "");
-  const targetUrl = `http://localhost:${jsonServerConfig.port}${url.pathname}${url.search}`;
-
-  const init: RequestInit = {
-    method: req.method,
-    headers: req.headers,
-    body: ["GET", "HEAD"].includes(req.method ?? "")
-      ? undefined
-      : await req.arrayBuffer().then((buf) => Buffer.from(buf)),
-    redirect: "manual",
-  };
-
-  const response = await fetch(targetUrl, init);
-  const resBody = await response.arrayBuffer();
-
-  const resHeaders = new Headers(response.headers);
-
-  return new NextResponse(resBody, {
-    status: response.status,
-    statusText: response.statusText,
-    headers: resHeaders,
-  });
-}
+import {
+  DeleteBodySchema,
+  GetQuerySchema,
+  PostBodySchema,
+  PutBodySchema,
+} from "@/schemas";
+import { proxyRequest } from "@/utils";
+import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 
 export async function GET(req: NextRequest) {
-  return proxyRequest(req);
+  try {
+    const query = Object.fromEntries(new URL(req.url).searchParams);
+    const parsedQuery = GetQuerySchema.parse(query);
+
+    const url = new URL(req.url);
+    url.pathname = url.pathname.replace(/^\/api\//, "");
+    url.search = "";
+
+    // Add sorting
+    if (parsedQuery.sort.length > 0) {
+      const sortFields = parsedQuery.sort.map(({ field }) => field).join(",");
+      const sortOrders = parsedQuery.sort.map(({ order }) => order).join(",");
+      url.searchParams.append("_sort", sortFields);
+      url.searchParams.append("_order", sortOrders);
+    }
+
+    // Add filters
+    if (parsedQuery.filter.length > 0) {
+      parsedQuery.filter.forEach(({ field, value }) => {
+        if (typeof value === "object" && !Array.isArray(value)) {
+          // Range filter
+          if (field === "timestamp") {
+            if (value.min) {
+              url.searchParams.append(
+                "timestamp_gte",
+                new Date(value.min).toISOString()
+              );
+            }
+            if (value.max) {
+              url.searchParams.append(
+                "timestamp_lte",
+                new Date(value.max).toISOString()
+              );
+            }
+          } else if (field === "amount" || field === "fees.processing_fee") {
+            if (value.min) {
+              url.searchParams.append(`${field}_gte`, value.min.toString());
+            }
+            if (value.max) {
+              url.searchParams.append(`${field}_lte`, value.max.toString());
+            }
+          }
+        } else if (Array.isArray(value)) {
+          // Array filter (e.g., status)
+          value.forEach((v) => url.searchParams.append(field, v));
+        } else {
+          // Exact match
+          url.searchParams.append(field, value.toString());
+        }
+      });
+    }
+
+    // Add search
+    if (parsedQuery.search) {
+      url.searchParams.append("q", parsedQuery.search);
+    }
+
+    // Add pagination
+    const offset = (parsedQuery.page - 1) * parsedQuery.size;
+    url.searchParams.append("_start", offset.toString());
+    url.searchParams.append("_limit", parsedQuery.size.toString());
+
+    return proxyRequest(req, `${url.pathname}${url.search}`);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return new NextResponse(JSON.stringify({ error: error.errors }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+    return new NextResponse(
+      JSON.stringify({ error: "Internal server error" }),
+      {
+        status: 500,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+  }
 }
 
 export async function POST(req: NextRequest) {
-  return proxyRequest(req);
+  try {
+    const body = await req.json();
+    const parsedBody = PostBodySchema.parse(body);
+    const url = new URL(req.url).pathname.replace(/^\/api\//, "");
+    return proxyRequest(req, url, parsedBody);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return new NextResponse(JSON.stringify({ error: error.errors }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+    return new NextResponse(
+      JSON.stringify({ error: "Internal server error" }),
+      {
+        status: 500,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+  }
 }
 
 export async function PUT(req: NextRequest) {
-  return proxyRequest(req);
+  try {
+    const body = await req.json();
+    const parsedBody = PutBodySchema.parse(body);
+    const url = new URL(req.url).pathname.replace(/^\/api\//, "");
+    return proxyRequest(req, url, parsedBody);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return new NextResponse(JSON.stringify({ error: error.errors }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+    return new NextResponse(
+      JSON.stringify({ error: "Internal server error" }),
+      {
+        status: 500,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+  }
 }
 
 export async function DELETE(req: NextRequest) {
-  return proxyRequest(req);
-}
+  try {
+    const body = await req.json();
+    const parsedBody = DeleteBodySchema.parse(body);
 
-export async function PATCH(req: NextRequest) {
-  return proxyRequest(req);
+    const deletePromises = parsedBody.ids.map(async (id) => {
+      const deleteUrl = new URL(req.url);
+      deleteUrl.pathname = `/transactions/${id}`;
+      return fetch(
+        `http://localhost:${jsonServerConfig.port}${deleteUrl.pathname}`,
+        {
+          method: "DELETE",
+        }
+      );
+    });
+
+    const responses = await Promise.all(deletePromises);
+    const failed = responses.filter((res) => !res.ok);
+
+    if (failed.length > 0) {
+      return new NextResponse(
+        JSON.stringify({ error: "Some deletions failed" }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    return new NextResponse(
+      JSON.stringify({ message: "Transactions deleted successfully" }),
+      {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return new NextResponse(JSON.stringify({ error: error.errors }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+    return new NextResponse(
+      JSON.stringify({ error: "Internal server error" }),
+      {
+        status: 500,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+  }
 }
