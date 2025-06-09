@@ -1,0 +1,142 @@
+import { TransactionTable } from "@/components/TransactionsTable";
+
+const dummyTransactions: Transaction[] = [
+  {
+    id: "txn_001",
+    amount: 150.75,
+    currency: "USD",
+    status: "completed",
+    timestamp: "2025-05-20T14:30:22Z",
+    description: "Online Purchase - Example Store",
+    merchant: {
+      name: "Example Store",
+      id: "mcht_987654",
+    },
+    payment_method: {
+      type: "credit_card",
+      last4: "4242",
+      brand: "visa",
+    },
+    sender: {
+      name: "John Doe",
+      account_id: "acc_12345",
+    },
+    receiver: {
+      name: "Example Store",
+      account_id: "acc_67890",
+    },
+    fees: {
+      processing_fee: 2.25,
+      currency: "USD",
+    },
+    metadata: {
+      order_id: "ord_13579",
+      customer_id: "cust_24680",
+    },
+  },
+  {
+    id: "txn_002",
+    amount: 75.0,
+    currency: "USD",
+    status: "pending",
+    timestamp: "2025-06-01T10:15:00Z",
+    description: "Subscription Renewal",
+    merchant: {
+      name: "Streaming Service",
+      id: "mcht_123456",
+    },
+    payment_method: {
+      type: "paypal",
+      last4: "",
+      brand: "",
+    },
+    sender: {
+      name: "Alice Smith",
+      account_id: "acc_54321",
+    },
+    receiver: {
+      name: "Streaming Service",
+      account_id: "acc_11223",
+    },
+    fees: {
+      processing_fee: 1.5,
+      currency: "USD",
+    },
+    metadata: {
+      order_id: "ord_24680",
+      customer_id: "cust_13579",
+    },
+  },
+  {
+    id: "txn_003",
+    amount: 300.0,
+    currency: "EUR",
+    status: "failed",
+    timestamp: "2025-06-05T08:45:30Z",
+    description: "Hotel Booking",
+    merchant: {
+      name: "Hotel Plaza",
+      id: "mcht_654321",
+    },
+    payment_method: {
+      type: "credit_card",
+      last4: "1111",
+      brand: "mastercard",
+    },
+    sender: {
+      name: "Robert Johnson",
+      account_id: "acc_67891",
+    },
+    receiver: {
+      name: "Hotel Plaza",
+      account_id: "acc_33445",
+    },
+    fees: {
+      processing_fee: 3.0,
+      currency: "EUR",
+    },
+    metadata: {
+      order_id: "ord_98765",
+      customer_id: "cust_11223",
+    },
+  },
+  {
+    id: "txn_004",
+    amount: 45.5,
+    currency: "USD",
+    status: "completed",
+    timestamp: "2025-06-07T13:20:10Z",
+    description: "Grocery Store Purchase",
+    merchant: {
+      name: "Fresh Market",
+      id: "mcht_789012",
+    },
+    payment_method: {
+      type: "debit_card",
+      last4: "5678",
+      brand: "visa",
+    },
+    sender: {
+      name: "Emma Wilson",
+      account_id: "acc_33456",
+    },
+    receiver: {
+      name: "Fresh Market",
+      account_id: "acc_55667",
+    },
+    fees: {
+      processing_fee: 1.0,
+      currency: "USD",
+    },
+    metadata: {
+      order_id: "ord_77889",
+      customer_id: "cust_99887",
+    },
+  },
+];
+
+const Transactions = () => {
+  return <TransactionTable data={dummyTransactions} />;
+};
+
+export default Transactions;
