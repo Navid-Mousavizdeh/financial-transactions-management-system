@@ -8,6 +8,7 @@ import { Table, Spin, Typography } from "antd";
 import dayjs from "dayjs";
 import { RootState } from "@/store";
 import { setTableState } from "@/store/slices/tableSlice";
+import { useRouter } from "next/navigation";
 
 const { Text } = Typography;
 
@@ -30,6 +31,7 @@ const TransactionTableContent = ({
 }: TransactionTableContentProps) => {
   const dispatch = useDispatch();
   const tableState = useSelector((state: RootState) => state.table);
+  const router = useRouter();
 
   const columns = useMemo(
     () => [
@@ -168,7 +170,7 @@ const TransactionTableContent = ({
         minHeight: 200,
       }}
     >
-      <Table
+      <Table<Transaction>
         rowKey="id"
         columns={table.getAllColumns().map((col) => ({
           title: col.columnDef.header as string,
@@ -216,6 +218,13 @@ const TransactionTableContent = ({
           onChange: (newPage, newSize) =>
             dispatch(setTableState({ page: newPage, size: newSize })),
           disabled: maxPage === 0,
+        }}
+        onRow={(record) => {
+          return {
+            onClick: () => {
+              router.push(`/transaction/${record.id}`);
+            },
+          };
         }}
         onChange={(_, __, sorter) => {
           const sorterArray = Array.isArray(sorter) ? sorter : [sorter];

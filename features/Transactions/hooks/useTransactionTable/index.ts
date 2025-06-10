@@ -6,7 +6,7 @@ import { RootState } from "@/store";
 import { clearFilters, setTableState } from "@/store/slices/tableSlice";
 import { generateGetParams } from "@/utils";
 import { useDebounce } from "@/hooks";
-import { deleteTransactions, getTransactions } from "../../utils";
+import { deleteTransactions, getTransactions } from "../../../utils";
 import { TransactionTableData } from "../../types";
 import { transactionsQueryKeys } from "../../constants";
 

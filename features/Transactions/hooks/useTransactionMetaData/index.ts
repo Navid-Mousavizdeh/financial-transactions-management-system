@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
-import { getQueryMetaData } from "../../utils";
 import { transactionsQueryKeys } from "../../constants";
+import { getQueryMetaData } from "@/features/utils";
 
 export const useTransactionMetaData = () => {
   return useQuery<TransactionMetaData, Error>({

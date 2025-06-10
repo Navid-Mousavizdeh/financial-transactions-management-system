@@ -153,7 +153,7 @@ export const GetParamsSchema = z
   });
 
 export const TransactionSchema = z.object({
-  id: z.string().uuid(),
+  id: z.string(),
   amount: z.number().positive(),
   currency: z.string().min(3).max(3),
   status: StatusSchema,

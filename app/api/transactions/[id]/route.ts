@@ -5,13 +5,13 @@ import { TransactionSchema } from "@/schemas";
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params;
+    const { id } = await params;
 
     // Validate ID format
-    const idSchema = z.string().uuid();
+    const idSchema = z.string();
     const idValidation = idSchema.safeParse(id);
     if (!idValidation.success) {
       return NextResponse.json(
@@ -43,19 +43,27 @@ export async function GET(
 
     const transaction = await response.json();
 
-    // Validate transaction data
-    const validation = TransactionSchema.safeParse(transaction);
-    if (!validation.success) {
+    if (transaction?.length) {
+      // Validate transaction data
+      const validation = TransactionSchema.safeParse(transaction[0]);
+      if (!validation.success) {
+        return NextResponse.json(
+          {
+            message: "Invalid transaction data",
+            errors: validation.error.issues,
+          },
+          { status: 500 }
+        );
+      }
+      return NextResponse.json(transaction[0], { status: 200 });
+    } else {
       return NextResponse.json(
         {
-          message: "Invalid transaction data",
-          errors: validation.error.issues,
+          message: "No Transaction with this Id",
         },
-        { status: 500 }
+        { status: 404 }
       );
     }
-
-    return NextResponse.json(transaction, { status: 200 });
   } catch (error) {
     console.error("Error fetching transaction:", error);
     return NextResponse.json(
