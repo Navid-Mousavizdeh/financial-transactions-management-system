@@ -189,5 +189,5 @@ export const TransactionSchema = z.object({
 export const PostBodySchema = TransactionSchema.omit({ id: true });
 export const PutBodySchema = TransactionSchema.partial().required({ id: true });
 export const DeleteBodySchema = z.object({
-  ids: z.string().uuid().array().min(1),
+  ids: z.string().array().min(1),
 });
