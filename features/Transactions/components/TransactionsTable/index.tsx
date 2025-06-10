@@ -14,13 +14,18 @@ import {
   Spin,
   Badge,
 } from "antd";
-import { DeleteOutlined, FilterOutlined } from "@ant-design/icons";
+import {
+  DeleteOutlined,
+  FilterOutlined,
+  PlusOutlined,
+} from "@ant-design/icons";
 import dayjs from "dayjs";
 import dynamic from "next/dynamic";
 import { RootState } from "@/store";
 import { generateGetParams } from "@/utils";
 import { setTableState } from "@/store/slices/tableSlice";
 import FilterChips from "../FilterChips";
+import { useRouter } from "next/navigation";
 
 const { Text } = Typography;
 
@@ -28,6 +33,7 @@ const FilterDrawer = dynamic(() => import("../FilterDrawer"), { ssr: false });
 
 const TransactionTable = memo(() => {
   const dispatch = useDispatch();
+  const router = useRouter();
   const tableState = useSelector((state: RootState) => state.table);
   const [data, setData] = useState<Transaction[]>([]);
   const [total, setTotal] = useState(0);
@@ -283,7 +289,16 @@ const TransactionTable = memo(() => {
             Filters
           </Button>
         </Badge>
-
+        <Button
+          variant="solid"
+          color="primary"
+          icon={<PlusOutlined />}
+          onClick={() => {
+            router.push("/transaction");
+          }}
+        >
+          Add
+        </Button>
         {selectedRowKeys.length > 0 && (
           <Button
             type="primary"
