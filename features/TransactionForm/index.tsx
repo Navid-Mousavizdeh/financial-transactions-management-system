@@ -97,7 +97,6 @@ export default function TransactionForm({ id }: TransactionFormProps) {
 
   // Populate form with fetched data in UPDATE/DELETE mode
   React.useEffect(() => {
-    console.log("transaction", transaction);
     if (transaction && isUpdateMode) {
       reset({
         id: transaction.id,
