@@ -1,13 +1,13 @@
 import {
   DeleteBodySchema,
-  GetQuerySchema,
+  GetParamsSchema,
   PostBodySchema,
   PutBodySchema,
 } from "@/schemas";
 import { z } from "zod";
 
-// Interface for GET params, derived from GetQuerySchema
-type GetParams = z.output<typeof GetQuerySchema>;
+// Interface for GET params
+type GetParams = z.input<typeof GetParamsSchema>;
 
 /**
  * Generates query parameters for GET requests
@@ -16,46 +16,7 @@ type GetParams = z.output<typeof GetQuerySchema>;
  * @throws Error if validation fails
  */
 export function generateGetParams(params: GetParams): URLSearchParams {
-  const parsedParams = GetQuerySchema.parse(params);
-  const searchParams = new URLSearchParams();
-
-  // Add sorting
-  if (parsedParams.sort.length > 0) {
-    const sortString = parsedParams.sort
-      .map(({ field, order }) => `${field}:${order}`)
-      .join(",");
-    searchParams.append("sort", sortString);
-  }
-
-  // Add filters
-  if (parsedParams.filter.length > 0) {
-    const filterString = parsedParams.filter
-      .map(({ field, value }) => {
-        if (typeof value === "object" && !Array.isArray(value)) {
-          const rangeParts: string[] = [];
-          if (value.min) rangeParts.push(`${field}.min:${value.min}`);
-          if (value.max) rangeParts.push(`${field}.max:${value.max}`);
-          return rangeParts.join(",");
-        } else if (Array.isArray(value)) {
-          return `${field}:${value.join("|")}`;
-        } else {
-          return `${field}:${value}`;
-        }
-      })
-      .join(",");
-    searchParams.append("filter", filterString);
-  }
-
-  // Add search
-  if (parsedParams.search) {
-    searchParams.append("search", parsedParams.search);
-  }
-
-  // Add pagination
-  searchParams.append("page", parsedParams.page.toString());
-  searchParams.append("size", parsedParams.size.toString());
-
-  return searchParams;
+  return GetParamsSchema.parse(params);
 }
 
 /**

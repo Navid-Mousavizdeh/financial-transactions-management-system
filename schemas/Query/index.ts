@@ -4,6 +4,29 @@ import { z } from "zod";
 export const SortOrderSchema = z.enum(["asc", "desc"]);
 export const StatusSchema = z.enum(["completed", "pending", "failed"]);
 
+export const RangeSchema = z
+  .object({
+    min: z.number().optional(),
+    max: z.number().optional(),
+  })
+  .refine((val) => val.min !== undefined || val.max !== undefined, {
+    message: "Range must have at least min or max defined",
+  });
+export const FilterValueSchema = z.union([
+  z.string(),
+  z.number(),
+  z.array(z.string()),
+  RangeSchema,
+]);
+export const FilterSchema = z.object({
+  field: z.string(),
+  value: FilterValueSchema,
+});
+export const SortSchema = z.object({
+  field: z.string(),
+  order: SortOrderSchema,
+});
+
 export const GetQuerySchema = z.any().transform((query: any): GetQuery => {
   const result: GetQuery = {
     sort: [],
@@ -76,6 +99,58 @@ export const GetQuerySchema = z.any().transform((query: any): GetQuery => {
 
   return result;
 });
+
+export const GetParamsSchema = z
+  .object({
+    sort: z.array(SortSchema).optional().default([]),
+    filter: z.array(FilterSchema).optional().default([]),
+    search: z.string().optional(),
+    page: z.number().int().min(1).default(1),
+    size: z.number().int().min(1).max(100).default(10),
+  })
+  .transform((params): URLSearchParams => {
+    const searchParams = new URLSearchParams();
+
+    // Add sorting
+    if (params.sort.length > 0) {
+      const sortString = params.sort
+        .map(({ field, order }) => `${field}:${order}`)
+        .join(",");
+      searchParams.append("sort", sortString);
+    }
+
+    // Add filters
+    if (params.filter.length > 0) {
+      const filterString = params.filter
+        .map(({ field, value }) => {
+          if (typeof value === "object" && !Array.isArray(value)) {
+            const rangeParts: string[] = [];
+            if (value.min !== undefined)
+              rangeParts.push(`${field}.min:${value.min}`);
+            if (value.max !== undefined)
+              rangeParts.push(`${field}.max:${value.max}`);
+            return rangeParts.join(",");
+          } else if (Array.isArray(value)) {
+            return `${field}:${value.join("|")}`;
+          } else {
+            return `${field}:${value}`;
+          }
+        })
+        .join(",");
+      searchParams.append("filter", filterString);
+    }
+
+    // Add search
+    if (params.search) {
+      searchParams.append("search", params.search);
+    }
+
+    // Add pagination
+    searchParams.append("page", params.page.toString());
+    searchParams.append("size", params.size.toString());
+
+    return searchParams;
+  });
 
 export const TransactionSchema = z.object({
   id: z.string().uuid(),
