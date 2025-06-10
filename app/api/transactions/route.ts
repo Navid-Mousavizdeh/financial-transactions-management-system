@@ -144,7 +144,8 @@ export async function PUT(req: NextRequest) {
   try {
     const body = await req.json();
     const parsedBody = PutBodySchema.parse(body);
-    const url = new URL(req.url).pathname.replace(/^\/api\//, "");
+    const url =
+      new URL(req.url).pathname.replace(/^\/api\//, "") + `/${parsedBody?.id}`;
     return proxyRequest(req, url, parsedBody);
   } catch (error) {
     if (error instanceof z.ZodError) {

@@ -10,12 +10,15 @@ import "./globals.css";
 import ThemeProvider from "@/providers/ThemeProvider";
 import { App } from "antd";
 import { DashboardLayout } from "@/components/layouts";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 const roboto = Roboto({
   subsets: ["latin"],
   variable: "--font-roboto",
   weight: ["400", "500", "700"], // optional
 });
+
+const queryClient = new QueryClient();
 
 export default function RootLayout({
   children,
@@ -27,11 +30,13 @@ export default function RootLayout({
       <body className={`${roboto.variable}`}>
         <AntdRegistry>
           <Provider store={store}>
-            <ThemeProvider>
-              <App>
-                <DashboardLayout>{children}</DashboardLayout>
-              </App>
-            </ThemeProvider>
+            <QueryClientProvider client={queryClient}>
+              <ThemeProvider>
+                <App>
+                  <DashboardLayout>{children}</DashboardLayout>
+                </App>
+              </ThemeProvider>
+            </QueryClientProvider>
           </Provider>
         </AntdRegistry>
       </body>

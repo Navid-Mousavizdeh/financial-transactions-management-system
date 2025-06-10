@@ -35,7 +35,7 @@
     },
     {
       "id": "txn_002",
-      "amount": 75.0,
+      "amount": 75,
       "currency": "USD",
       "status": "pending",
       "timestamp": "2025-06-01T10:15:00Z",
@@ -68,7 +68,7 @@
     },
     {
       "id": "txn_003",
-      "amount": 300.0,
+      "amount": 300,
       "currency": "EUR",
       "status": "failed",
       "timestamp": "2025-06-05T08:45:30Z",
@@ -91,7 +91,7 @@
         "account_id": "acc_33445"
       },
       "fees": {
-        "processing_fee": 3.0,
+        "processing_fee": 3,
         "currency": "EUR"
       },
       "metadata": {
@@ -107,7 +107,7 @@
       "timestamp": "2025-06-07T13:20:10Z",
       "description": "Grocery Store Purchase",
       "merchant": {
-        "name": "Fresh Market",
+        "name": "Fresh Market changed",
         "id": "mcht_789012"
       },
       "payment_method": {
@@ -124,12 +124,12 @@
         "account_id": "acc_55667"
       },
       "fees": {
-        "processing_fee": 1.0,
+        "processing_fee": 1,
         "currency": "USD"
       },
       "metadata": {
         "order_id": "ord_77889",
-        "customer_id": "cust_99887"
+        "customer_id": "cust_9988723"
       }
     }
   ]

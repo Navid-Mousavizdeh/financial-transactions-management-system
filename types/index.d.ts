@@ -32,6 +32,13 @@ type Transaction = {
   };
 };
 
+type TransactionMetaData = {
+  amount: { min: number; max: number };
+  timestamp: { min: string; max: string };
+  merchant_name: string[];
+  payment_method: string[];
+};
+
 type GetQuery = {
   sort: { field: string; order: "asc" | "desc" }[];
   filter: {
