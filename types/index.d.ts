@@ -42,3 +42,9 @@ type GetQuery = {
   page: number;
   size: number;
 };
+
+type GetResponse = {
+  data: Transaction[];
+  total: number;
+  maxPage: number;
+};
