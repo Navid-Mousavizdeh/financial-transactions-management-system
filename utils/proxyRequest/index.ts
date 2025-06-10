@@ -6,13 +6,6 @@ export async function proxyRequest(req: NextRequest, url: string, body?: any) {
     url.startsWith("/") ? url : `/${url}`
   }`;
 
-  // Log request details
-  console.log("Proxy Request:", {
-    targetUrl,
-    method: req.method,
-    providedBody: body,
-  });
-
   // Prepare request body
   let requestBody: string | undefined;
   let contentLength: string | undefined;
@@ -22,12 +15,6 @@ export async function proxyRequest(req: NextRequest, url: string, body?: any) {
     try {
       requestBody = JSON.stringify(body);
       contentLength = Buffer.byteLength(requestBody, "utf8").toString();
-      console.log(
-        "Explicit Body:",
-        requestBody,
-        "Content-Length:",
-        contentLength
-      );
     } catch (error) {
       console.error("Error serializing provided body:", error);
       return new NextResponse(
@@ -47,14 +34,6 @@ export async function proxyRequest(req: NextRequest, url: string, body?: any) {
         const parsedBody = JSON.parse(rawBody);
         requestBody = JSON.stringify(parsedBody); // Re-serialize to ensure clean JSON
         contentLength = Buffer.byteLength(requestBody, "utf8").toString();
-        console.log(
-          "Request Body:",
-          requestBody,
-          "Content-Length:",
-          contentLength
-        );
-      } else {
-        console.log("No request body provided");
       }
     } catch (error) {
       console.error("Error processing request body:", error);
@@ -80,13 +59,6 @@ export async function proxyRequest(req: NextRequest, url: string, body?: any) {
   try {
     const response = await fetch(targetUrl, init);
     const resBodyText = await response.text();
-
-    console.log("Response:", {
-      status: response.status,
-      statusText: response.statusText,
-      body: resBodyText,
-    });
-
     const resHeaders = new Headers();
     resHeaders.set("Content-Type", "application/json");
 
