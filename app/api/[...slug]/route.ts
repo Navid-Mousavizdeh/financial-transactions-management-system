@@ -67,12 +67,39 @@ export async function GET(req: NextRequest) {
       url.searchParams.append("q", parsedQuery.search);
     }
 
+    // Fetch total count (without pagination)
+    const countUrl = new URL(url);
+    const countResponse = await fetch(
+      `http://localhost:${jsonServerConfig.port}${countUrl.pathname}${countUrl.search}`
+    );
+    const countData = await countResponse.json();
+    const total = Array.isArray(countData) ? countData.length : 0;
+    const maxPage = Math.ceil(total / parsedQuery.size);
+
     // Add pagination
     const offset = (parsedQuery.page - 1) * parsedQuery.size;
     url.searchParams.append("_start", offset.toString());
     url.searchParams.append("_limit", parsedQuery.size.toString());
 
-    return proxyRequest(req, `${url.pathname}${url.search}`);
+    const response = await proxyRequest(req, `${url.pathname}${url.search}`);
+    const data = await response.json();
+
+    // Wrap response with total and maxPage
+    const responseBody: GetResponse = {
+      data: Array.isArray(data) ? data : [],
+      total,
+      maxPage,
+    };
+
+    return new NextResponse(JSON.stringify(responseBody), {
+      status: response.status,
+      headers: {
+        "Content-Type": "application/json",
+        "Content-Length": Buffer.byteLength(
+          JSON.stringify(responseBody)
+        ).toString(),
+      },
+    });
   } catch (error) {
     if (error instanceof z.ZodError) {
       return new NextResponse(JSON.stringify({ error: error.errors }), {
