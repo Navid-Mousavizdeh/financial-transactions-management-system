@@ -92,7 +92,7 @@ export async function GET() {
         ).toString(),
       },
     });
-  } catch (error) {
+  } catch (_error) {
     return new NextResponse(
       JSON.stringify({ error: "Internal server error" }),
       {
