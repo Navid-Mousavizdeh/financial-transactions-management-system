@@ -19,7 +19,14 @@ const FilterButton = ({
   return (
     <Badge count={filterCount || 0}>
       {isLoadingMetaData ? (
-        <ButtonSkeleton active={true} />
+        <ButtonSkeleton
+          style={{
+            transform: "translateY(-2px)",
+            width: "90px",
+            height: "32px",
+          }}
+          active={true}
+        />
       ) : (
         <Button
           icon={<FilterOutlined />}

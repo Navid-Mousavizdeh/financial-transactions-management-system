@@ -1,6 +1,9 @@
 import { axiosInstance } from "@/config";
 
-export async function getTransactions(params: URLSearchParams): Promise<{
+export async function getTransactions(
+  params: URLSearchParams,
+  setPagination: (val: { total: number; maxPage: number }) => void
+): Promise<{
   transactions: Transaction[];
   total: number;
   maxPage: number;
@@ -10,6 +13,7 @@ export async function getTransactions(params: URLSearchParams): Promise<{
       params,
     });
     const { data, total, maxPage } = response.data;
+    setPagination({ total, maxPage });
     return { transactions: data, total, maxPage };
   } catch (error: any) {
     throw new Error(

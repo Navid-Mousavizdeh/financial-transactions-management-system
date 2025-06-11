@@ -1,10 +1,10 @@
 "use client";
 
-import { useMemo, useRef } from "react";
+import { useMemo, useRef, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useReactTable, getCoreRowModel } from "@tanstack/react-table";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { Table, Spin, Typography } from "antd";
+import { Table, Typography, Skeleton } from "antd";
 import dayjs from "dayjs";
 import { RootState } from "@/store";
 import { setTableState } from "@/store/slices/tableSlice";
@@ -33,6 +33,16 @@ const TransactionTableContent = ({
   const tableState = useSelector((state: RootState) => state.table);
   const router = useRouter();
 
+  // Store a copy of the current data in a ref
+  const currentDataRef = useRef<Transaction[]>(data);
+
+  // Update the ref whenever new data is received (not during loading)
+  useEffect(() => {
+    if (!loading) {
+      currentDataRef.current = data;
+    }
+  }, [data, loading]);
+
   const columns = useMemo(
     () => [
       { id: "id", accessorKey: "id", header: "Transaction ID" },
@@ -44,7 +54,7 @@ const TransactionTableContent = ({
         accessorKey: "timestamp",
         header: "Timestamp",
         cell: ({ getValue }: any) =>
-          dayjs(getValue()).format("YYYY-MM-DD HH:mm:ss"),
+          getValue() ? dayjs(getValue()).format("YYYY-MM-DD HH:mm:ss") : "-",
       },
       { id: "description", accessorKey: "description", header: "Description" },
       {
@@ -108,13 +118,48 @@ const TransactionTableContent = ({
     []
   );
 
+  // Use current data during loading, ensure exactly tableState.size rows
+  const displayData = useMemo(() => {
+    const sourceData = loading ? currentDataRef.current : data;
+    const isLastPage = tableState.page === Math.ceil(total / tableState.size);
+    const expectedRows = isLastPage
+      ? Math.min(total % tableState.size || tableState.size, tableState.size)
+      : tableState.size;
+
+    if (sourceData.length === expectedRows) return sourceData;
+    if (sourceData.length > expectedRows) {
+      return sourceData.slice(0, expectedRows);
+    }
+    return [
+      ...sourceData,
+      ...Array.from(
+        { length: expectedRows - sourceData.length },
+        (_, index) => ({
+          id: `empty-${index}`,
+          status: "pending" as "pending" | "completed" | "failed",
+          amount: 0,
+          currency: "",
+          timestamp: "",
+          description: "",
+          merchant: { name: "", id: "" },
+          payment_method: { type: "", brand: "", last4: "" },
+          sender: { name: "", account_id: "" },
+          receiver: { name: "", account_id: "" },
+          fees: { processing_fee: 0, currency: "" },
+          metadata: { order_id: "", customer_id: "" },
+        })
+      ),
+    ];
+  }, [loading, data, tableState.size, tableState.page, total]);
+
   const table = useReactTable({
-    data,
+    data: displayData,
     columns,
     getCoreRowModel: getCoreRowModel(),
     manualPagination: true,
     manualSorting: true,
     onSortingChange: (updater) => {
+      if (loading) return;
       const newSort =
         typeof updater === "function"
           ? updater(
@@ -148,16 +193,23 @@ const TransactionTableContent = ({
   const rowVirtualizer = useVirtualizer({
     count: rows.length,
     getScrollElement: () => tableContainerRef.current,
-    estimateSize: () => 40,
+    estimateSize: () => 55,
     overscan: 10,
   });
 
   const virtualRows = rowVirtualizer.getVirtualItems();
   const tableHeight = useMemo(() => {
-    const visibleRowsHeight = (virtualRows.length + 1) * 77 + 48;
+    const visibleRowsHeight = virtualRows.length * 55;
     const minHeight = 400;
-    return Math.max(visibleRowsHeight, minHeight);
+    return Math.max(visibleRowsHeight + 150, minHeight);
   }, [virtualRows.length]);
+
+  // Calculate pagination range for display
+  const paginationRange = useMemo(() => {
+    const start = (tableState.page - 1) * tableState.size + 1;
+    const end = Math.min(start + tableState.size - 1, total);
+    return [start, end];
+  }, [tableState.page, tableState.size, total]);
 
   return (
     <div
@@ -167,6 +219,7 @@ const TransactionTableContent = ({
         justifyContent: "center",
         width: "100%",
         display: "flex",
+        flexGrow: 1,
         minHeight: 200,
       }}
     >
@@ -176,6 +229,15 @@ const TransactionTableContent = ({
           title: col.columnDef.header as string,
           key: col.id,
           render: (_, record: Transaction) => {
+            if (loading) {
+              return (
+                <Skeleton.Input
+                  active
+                  size="small"
+                  style={{ width: 100, height: "18px" }}
+                />
+              );
+            }
             const keys = col.id.split(".");
             let value: any = record;
             for (const k of keys) {
@@ -192,41 +254,48 @@ const TransactionTableContent = ({
             ? "ascend"
             : null,
           fixed: col.id === "id" ? "left" : undefined,
-          width: col.id === "id" ? 120 : col.id === "timestamp" ? 180 : 150,
         }))}
         dataSource={virtualRows.map((vr) => rows[vr.index].original)}
-        loading={loading}
-        locale={{
-          emptyText: loading ? "Loading" : undefined,
-        }}
         scroll={{ x: "max-content" }}
         rowSelection={{
           selectedRowKeys,
           onChange: setSelectedRowKeys,
+          getCheckboxProps: () => ({
+            disabled: loading,
+          }),
         }}
         pagination={{
           current: tableState.page,
           pageSize: tableState.size,
-          total,
+          total: total,
           showSizeChanger: true,
-          showTotal: (total: number, range) => (
-            <Text disabled style={{ marginTop: 4 }}>
-              {`${range.join(" to ")} of ${total} items`}
+          showTotal: (total: number) => (
+            <Text disabled={loading} style={{ marginTop: 4 }}>
+              {loading
+                ? `Loading ${paginationRange.join(" to ")} of ${total} items`
+                : `${paginationRange.join(" to ")} of ${total} items`}
             </Text>
           ),
           pageSizeOptions: [10, 20, 50, 100],
-          onChange: (newPage, newSize) =>
-            dispatch(setTableState({ page: newPage, size: newSize })),
-          disabled: maxPage === 0,
+          onChange: (newPage, newSize) => {
+            if (loading) return;
+            dispatch(setTableState({ page: newPage, size: newSize }));
+          },
+          disabled: maxPage === 0 || loading,
+          showLessItems: true,
+          hideOnSinglePage: false,
+          position: ["bottomCenter"],
         }}
-        onRow={(record) => {
-          return {
-            onClick: () => {
+        onRow={(record) => ({
+          onClick: () => {
+            if (!loading) {
               router.push(`/transaction/${record.id}`);
-            },
-          };
-        }}
+            }
+          },
+          style: loading ? { cursor: "not-allowed" } : undefined,
+        })}
         onChange={(_, __, sorter) => {
+          if (loading) return;
           const sorterArray = Array.isArray(sorter) ? sorter : [sorter];
           const sort = sorterArray
             .filter((s) => s.order)

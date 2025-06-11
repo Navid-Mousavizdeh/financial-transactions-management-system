@@ -106,7 +106,7 @@ export const GetParamsSchema = z
     filter: z.array(FilterSchema).optional().default([]),
     search: z.string().optional(),
     page: z.number().int().min(1).default(1),
-    size: z.number().int().min(1).max(100).default(10),
+    size: z.number().int().min(1).max(1000).default(10),
   })
   .transform((params): URLSearchParams => {
     const searchParams = new URLSearchParams();

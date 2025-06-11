@@ -37,8 +37,15 @@ const TransactionTable = () => {
   }
 
   return (
-    <Space direction="vertical" style={{ width: "100%", height: "100%" }}>
-      <Space style={{ marginBottom: 8, width: "100%" }}>
+    <Space
+      direction="vertical"
+      style={{
+        width: "100%",
+        height: "100%",
+        display: "flex",
+      }}
+    >
+      <Space style={{ marginBottom: 8, width: "100%", flexShrink: 0 }}>
         <Input.Search
           placeholder="Search transactions"
           value={search}

@@ -17,6 +17,13 @@ export const useTransactionTable = () => {
   const [search, setSearch] = useState(tableState.filters.search || "");
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
   const [drawerVisible, setDrawerVisible] = useState(false);
+  const [pagination, setPagination] = useState<{
+    total: number;
+    maxPage: number;
+  }>({
+    total: 0,
+    maxPage: 1,
+  });
 
   // Debounce search, filters, and sort
   const debouncedSearch = useDebounce(search, 500);
@@ -112,12 +119,13 @@ export const useTransactionTable = () => {
       queryParams.params.toString(),
     ],
     queryFn: async () => {
-      const response = await getTransactions(queryParams.params);
+      const response = await getTransactions(queryParams.params, setPagination);
       return {
         ...response,
         filterCount: queryParams.filterCount,
       };
     },
+
     staleTime: 5 * 60 * 1000, // Cache for 5 minutes
     retry: 2,
   });
@@ -159,8 +167,8 @@ export const useTransactionTable = () => {
     data,
     isLoading: isLoading || isFetching,
     error,
-    total: data?.total ?? 0,
-    maxPage: data?.maxPage ?? 1,
+    total: pagination.total ?? 0,
+    maxPage: pagination.maxPage ?? 1,
     handleDeleteSelected,
     isDeleting,
   };
