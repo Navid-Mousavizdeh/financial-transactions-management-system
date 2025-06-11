@@ -1,0 +1,42 @@
+name: Deploy to K3s
+
+on:
+  push:
+    branches: ["master"]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Log in to GitHub Container Registry
+        run: echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Build and Push Docker Image
+        run: |
+          docker build -t ghcr.io/${{ github.repository }}:latest .
+          docker push ghcr.io/${{ github.repository }}:latest
+
+      - name: Install sshpass
+        run: sudo apt-get update && sudo apt-get install -y sshpass
+
+      - name: Debug secrets
+        run: |
+          echo "VPS_USER length: ${#VPS_USER}"
+          echo "VPS_HOST length: ${#VPS_HOST}"
+          echo "VPS_PASSWORD length: ${#VPS_PASSWORD}"
+        env:
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_PASSWORD: ${{ secrets.VPS_PASSWORD }}
+
+      - name: Copy k8s.yaml to server
+        run: |
+          sshpass -p "${{ secrets.VPS_PASSWORD }}" scp -o StrictHostKeyChecking=no k8s.yaml ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}
+
+      - name: Apply Kubernetes manifests
+        run: |
+          sshpass -p "${{ secrets.VPS_PASSWORD }}" ssh -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} "sudo k3s kubectl apply -f k8s.yaml"
