@@ -1,5 +1,5 @@
 import { config as jsonServerConfig } from "@/json-server/config";
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 
 type QueryMetaDataResponse = {
   amount: { min: number; max: number };
@@ -8,7 +8,7 @@ type QueryMetaDataResponse = {
   payment_method: string[];
 };
 
-export async function GET(req: NextRequest) {
+export async function GET() {
   try {
     // Fetch all transactions
     const response = await fetch(
@@ -48,7 +48,7 @@ export async function GET(req: NextRequest) {
     if (transactions.length > 0) {
       // Calculate amount range
       metadata.amount = transactions.reduce(
-        (acc: { min: number; max: number }, t: any) => ({
+        (acc: { min: number; max: number }, t: Transaction) => ({
           min: Math.min(acc.min, t.amount),
           max: Math.max(acc.max, t.amount),
         }),
@@ -57,7 +57,7 @@ export async function GET(req: NextRequest) {
 
       // Calculate timestamp range
       metadata.timestamp = transactions.reduce(
-        (acc: { min: string; max: string }, t: any) => ({
+        (acc: { min: string; max: string }, t: Transaction) => ({
           min: acc.min
             ? t.timestamp < acc.min
               ? t.timestamp
@@ -74,12 +74,12 @@ export async function GET(req: NextRequest) {
 
       // Collect unique merchant names
       metadata.merchant_name = Array.from(
-        new Set(transactions.map((t: any) => t.merchant.name))
+        new Set(transactions.map((t: Transaction) => t.merchant.name))
       ).sort();
 
       // Collect unique payment method types
       metadata.payment_method = Array.from(
-        new Set(transactions.map((t: any) => t.payment_method.type))
+        new Set(transactions.map((t: Transaction) => t.payment_method.type))
       ).sort();
     }
 

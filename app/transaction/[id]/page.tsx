@@ -1,6 +1,5 @@
 "use client";
 
-import { Transactions } from "@/features";
 import TransactionForm from "@/features/TransactionForm";
 import { use } from "react";
 
